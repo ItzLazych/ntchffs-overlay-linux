@@ -160,3 +160,4 @@ cp -rf data/obs-plugins/ntchffs-overlay/. ~/.config/obs-studio/plugins/ntchffs-o
 
 - Оригинальный проект: [notch4ff4/ntchffs-overlay](https://github.com/notch4ff4/ntchffs-overlay) (Copyright (C) 2026 ntchff)
 - Распространяется по лицензии **GPL-2.0-or-later** — подробности в [LICENSE](LICENSE) и [LICENSES.md](LICENSES.md).
+- Сообществу [Max.mov | ALLPLAY](https://t.me/a11p1ay) и отдельно [Max.mov™](https://www.youtube.com/@MAXiM0V) – за идейное вдохновение
