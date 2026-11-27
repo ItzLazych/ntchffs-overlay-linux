@@ -1,0 +1,10 @@
+/build/
+/build-local/
+/obs-plugins/
+*.zip
+*.so
+*.o
+*.a
+*.user
+.DS_Store
+compile_commands.json

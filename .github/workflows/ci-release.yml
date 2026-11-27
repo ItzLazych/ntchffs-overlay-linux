@@ -1,0 +1,178 @@
+name: Build and Release Linux
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-arch:
+    runs-on: ubuntu-latest
+    container:
+      image: archlinux:latest
+    steps:
+      - name: Install build dependencies
+        run: |
+          pacman -Syu --noconfirm --needed \
+            base-devel cmake pkgconf git obs-studio ffmpeg \
+            qt6-base qt6-svg qt6-wayland wayland-protocols \
+            libpulse libx11 libxext libxfixes python zip
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure and build (Release)
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j"$(nproc)"
+
+      - name: Verify shared library linkage
+        run: |
+          if ldd -r build/ntchffs-overlay.so 2>&1 | grep -qE "not found|undefined symbol"; then
+            ldd -r build/ntchffs-overlay.so
+            exit 1
+          fi
+          python3 -c 'import ctypes, os; lib=ctypes.CDLL("build/ntchffs-overlay.so", mode=os.RTLD_NOW); assert hasattr(lib, "obs_module_load"), "Missing obs_module_load"'
+
+      - name: Package release zip
+        run: |
+          STAGE=/tmp/stage-arch
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE/ntchffs-overlay/bin/64bit" "$STAGE/ntchffs-overlay/data"
+          cp -f build/ntchffs-overlay.so "$STAGE/ntchffs-overlay/bin/64bit/ntchffs-overlay.so"
+          strip --strip-unneeded "$STAGE/ntchffs-overlay/bin/64bit/ntchffs-overlay.so"
+          cp -rf data/obs-plugins/ntchffs-overlay/. "$STAGE/ntchffs-overlay/data/"
+          cp -f README.md LICENSE LICENSES.md install.sh CMakeLists.txt "$STAGE/"
+          chmod +x "$STAGE/install.sh"
+          cp -rf protocols src "$STAGE/"
+          (cd "$STAGE" && zip -r -9 "${GITHUB_WORKSPACE}/ntchffs-overlay-linux-arch-x86_64.zip" .)
+
+      - name: Smoke test installer from zip
+        run: |
+          TEST_UNPACK=/tmp/unpack-arch
+          TEST_HOME=/tmp/home-arch
+          rm -rf "$TEST_UNPACK" "$TEST_HOME"
+          mkdir -p "$TEST_UNPACK" "$TEST_HOME"
+          unzip -q ntchffs-overlay-linux-arch-x86_64.zip -d "$TEST_UNPACK"
+          (cd "$TEST_UNPACK" && HOME="$TEST_HOME" ./install.sh)
+          python3 -c "import ctypes, os; lib=ctypes.CDLL('$TEST_HOME/.config/obs-studio/plugins/ntchffs-overlay/bin/64bit/ntchffs-overlay.so', mode=os.RTLD_NOW); assert hasattr(lib, 'obs_module_load')"
+
+      - name: Upload Arch artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ntchffs-overlay-linux-arch-x86_64
+          path: ntchffs-overlay-linux-arch-x86_64.zip
+          if-no-files-found: error
+
+  build-ubuntu:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential cmake pkg-config libobs-dev \
+            libavcodec-dev libavformat-dev libavutil-dev libswscale-dev libswresample-dev \
+            qt6-base-dev qt6-base-private-dev qt6-svg-dev \
+            qt6-wayland-dev qt6-wayland-private-dev wayland-protocols libwayland-dev \
+            libpulse-dev libx11-dev libxext-dev libxfixes-dev python3 zip
+
+      - name: Configure and build (Release)
+        run: |
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          cmake --build build -j"$(nproc)"
+
+      - name: Verify shared library linkage
+        run: |
+          if ldd -r build/ntchffs-overlay.so 2>&1 | grep -qE "not found"; then
+            ldd -r build/ntchffs-overlay.so
+            exit 1
+          fi
+          python3 -c 'import ctypes, os; lib=ctypes.CDLL("build/ntchffs-overlay.so", mode=os.RTLD_NOW); assert hasattr(lib, "obs_module_load"), "Missing obs_module_load"'
+
+      - name: Package release zip
+        run: |
+          STAGE=/tmp/stage-ubuntu
+          rm -rf "$STAGE"
+          mkdir -p "$STAGE/ntchffs-overlay/bin/64bit" "$STAGE/ntchffs-overlay/data"
+          cp -f build/ntchffs-overlay.so "$STAGE/ntchffs-overlay/bin/64bit/ntchffs-overlay.so"
+          strip --strip-unneeded "$STAGE/ntchffs-overlay/bin/64bit/ntchffs-overlay.so"
+          cp -rf data/obs-plugins/ntchffs-overlay/. "$STAGE/ntchffs-overlay/data/"
+          cp -f README.md LICENSE LICENSES.md install.sh CMakeLists.txt "$STAGE/"
+          chmod +x "$STAGE/install.sh"
+          cp -rf protocols src "$STAGE/"
+          (cd "$STAGE" && zip -r -9 "${GITHUB_WORKSPACE}/ntchffs-overlay-linux-ubuntu-24.04-x86_64.zip" .)
+
+      - name: Smoke test installer from zip
+        run: |
+          TEST_UNPACK=/tmp/unpack-ubuntu
+          TEST_HOME=/tmp/home-ubuntu
+          rm -rf "$TEST_UNPACK" "$TEST_HOME"
+          mkdir -p "$TEST_UNPACK" "$TEST_HOME"
+          unzip -q ntchffs-overlay-linux-ubuntu-24.04-x86_64.zip -d "$TEST_UNPACK"
+          (cd "$TEST_UNPACK" && HOME="$TEST_HOME" ./install.sh)
+          python3 -c "import ctypes, os; lib=ctypes.CDLL('$TEST_HOME/.config/obs-studio/plugins/ntchffs-overlay/bin/64bit/ntchffs-overlay.so', mode=os.RTLD_NOW); assert hasattr(lib, 'obs_module_load')"
+
+      - name: Upload Ubuntu artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ntchffs-overlay-linux-ubuntu-24.04-x86_64
+          path: ntchffs-overlay-linux-ubuntu-24.04-x86_64.zip
+          if-no-files-found: error
+
+  release:
+    needs: [build-arch, build-ubuntu]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          python3 - <<'PY' > /tmp/release-notes.md
+          import textwrap
+          print(textwrap.dedent("""\
+          ## ntchffs-overlay для Linux (Wayland / X11)
+
+          Linux-форк плагина **[notch4ff4/ntchffs-overlay](https://github.com/notch4ff4/ntchffs-overlay)** для OBS Studio.
+
+          ### Совместимость и окружения
+          - **Wayland (`wlr-layer-shell`)**: `niri`, `Hyprland`, `Sway`, `River`, `Wayfire`, `Labwc`
+          - **Wayland (fallback `wl_surface_set_input_region`)**: GNOME / KDE Wayland
+          - **X11**: `libX11` (`XQueryKeymap`) + `XShape` click-through
+          - При первом запуске автоматически создаются стандартные пресеты экспорта: `Copy (Lossless Trim)`, `Balanced`, `Quality`, `Strong Compression`
+
+          ### Установка
+          1. Скачайте архив под ваш дистрибутив:
+             - `ntchffs-overlay-linux-arch-x86_64.zip` — Arch Linux / CachyOS / EndeavourOS / Manjaro
+             - `ntchffs-overlay-linux-ubuntu-24.04-x86_64.zip` — Ubuntu 24.04
+          2. Распакуйте и запустите `./install.sh` (или `./install.sh --flatpak` для Flatpak OBS).
+          3. Для других дистрибутивов скрипт автоматически соберёт плагин из исходников внутри архива (или используйте `./install.sh --build`)."""))
+          PY
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" ntchffs-overlay-linux-*.zip --clobber
+            gh release edit "$TAG" --title "ntchffs-overlay Linux ${TAG}" --notes-file /tmp/release-notes.md
+          else
+            gh release create "$TAG" ntchffs-overlay-linux-*.zip \
+              --title "ntchffs-overlay Linux ${TAG}" \
+              --notes-file /tmp/release-notes.md
+          fi
