@@ -33,6 +33,14 @@ find_package(Qt6 QUIET OPTIONAL_COMPONENTS WaylandClientPrivate)
 find_library(OBS_LIBRARY NAMES obs HINTS ${LIBOBS_LIBRARY_DIRS} /usr/lib /usr/lib64 /usr/local/lib /usr/local/lib64 REQUIRED)
 find_library(OBS_FRONTEND_LIBRARY NAMES obs-frontend-api HINTS ${LIBOBS_LIBRARY_DIRS} /usr/lib /usr/lib64 /usr/local/lib /usr/local/lib64 REQUIRED)
 
+include(CheckCXXSourceCompiles)
+set(CMAKE_REQUIRED_INCLUDES ${LIBOBS_INCLUDE_DIRS} /usr/include/obs)
+check_cxx_source_compiles("
+#include <obs-frontend-api.h>
+int main() { return static_cast<int>(OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVING); }
+" HAVE_OBS_EVENT_REPLAY_BUFFER_SAVING)
+unset(CMAKE_REQUIRED_INCLUDES)
+
 pkg_check_modules(WAYLAND_PROTOCOLS QUIET wayland-protocols)
 set(_xdg_shell_candidates "")
 if(WAYLAND_PROTOCOLS_FOUND)
@@ -134,6 +142,7 @@ target_compile_definitions(ntchffs-overlay PRIVATE
     HAVE_OBSCONFIG_H
     PLUGIN_NAME="ntchffs-overlay"
     PLUGIN_VERSION="${PROJECT_VERSION}"
+    $<$<BOOL:${HAVE_OBS_EVENT_REPLAY_BUFFER_SAVING}>:HAVE_OBS_EVENT_REPLAY_BUFFER_SAVING=1>
 )
 
 target_compile_options(ntchffs-overlay PRIVATE

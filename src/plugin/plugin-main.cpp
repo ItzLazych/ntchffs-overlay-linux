@@ -1154,9 +1154,11 @@ void FrontendEventCallback(enum obs_frontend_event event, void *)
 		overlay_indicators_update_state(obs_frontend_recording_active(), false, false);
 		overlay_indicators_play_sound(3);
 		break;
+#ifdef HAVE_OBS_EVENT_REPLAY_BUFFER_SAVING
 	case OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVING:
 		overlay_window_notify_replay_saving(true);
 		break;
+#endif
 	case OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED:
 		HandleReplaySavedEvent();
 		break;
