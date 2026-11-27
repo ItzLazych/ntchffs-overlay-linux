@@ -22,7 +22,7 @@ jobs:
           pacman -Syu --noconfirm --needed \
             base-devel cmake pkgconf git obs-studio ffmpeg \
             qt6-base qt6-svg qt6-wayland wayland-protocols \
-            libpulse libx11 libxext libxfixes python zip
+            libpulse libx11 libxext libxfixes python zip unzip
 
       - name: Checkout repository
         uses: actions/checkout@v4

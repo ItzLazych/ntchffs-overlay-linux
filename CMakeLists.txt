@@ -26,9 +26,9 @@ find_package(Qt6 REQUIRED COMPONENTS
     Widgets
     Svg
     WaylandClient
-    WaylandClientPrivate
     WaylandScannerTools
 )
+find_package(Qt6 QUIET OPTIONAL_COMPONENTS WaylandClientPrivate)
 
 find_library(OBS_LIBRARY NAMES obs HINTS ${LIBOBS_LIBRARY_DIRS} /usr/lib /usr/lib64 /usr/local/lib /usr/local/lib64 REQUIRED)
 find_library(OBS_FRONTEND_LIBRARY NAMES obs-frontend-api HINTS ${LIBOBS_LIBRARY_DIRS} /usr/lib /usr/lib64 /usr/local/lib /usr/local/lib64 REQUIRED)
@@ -140,7 +140,6 @@ target_link_libraries(ntchffs-overlay PRIVATE
     Qt6::Widgets
     Qt6::Svg
     Qt6::WaylandClient
-    Qt6::WaylandClientPrivate
     PkgConfig::AVCODEC
     PkgConfig::AVFORMAT
     PkgConfig::AVUTIL
@@ -153,3 +152,9 @@ target_link_libraries(ntchffs-overlay PRIVATE
     PkgConfig::XFIXES
     pthread
 )
+
+if(TARGET Qt6::WaylandClientPrivate)
+    target_link_libraries(ntchffs-overlay PRIVATE Qt6::WaylandClientPrivate)
+elseif(DEFINED Qt6WaylandClient_PRIVATE_INCLUDE_DIRS)
+    target_include_directories(ntchffs-overlay PRIVATE ${Qt6WaylandClient_PRIVATE_INCLUDE_DIRS})
+endif()
