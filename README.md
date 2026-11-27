@@ -2,6 +2,8 @@
 
 Linux-форк (Wayland и X11) плагина **[ntchff's Overlay](https://github.com/notch4ff4/ntchffs-overlay)** для OBS Studio.
 
+> **О создании порта:** этот Linux-порт плагина сделан с помощью моделей **Gemini 4 Argon**, **Gemini 4 Hydrogen** и **Gemini 4 Neon**.
+
 Интерактивный оверлей-HUD, галерея повторов, триммер/экспорт видео (Copy / CRF / разрешение / FPS / аудиодорожки / GIF), индикаторы состояния и уведомления для OBS Studio на Linux.
 
 При первом запуске плагин автоматически создаёт стандартные пресеты экспорта:
