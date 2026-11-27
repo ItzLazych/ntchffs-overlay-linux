@@ -99,12 +99,20 @@ set_target_properties(ntchffs-overlay PROPERTIES
     VISIBILITY_INLINES_HIDDEN ON
 )
 
-qt6_generate_wayland_protocol_client_sources(ntchffs-overlay
-    PRIVATE_CODE
-    FILES
-        ${CMAKE_CURRENT_SOURCE_DIR}/protocols/wlr-layer-shell-unstable-v1.xml
-        ${XDG_SHELL_XML_PATH}
-)
+if(Qt6WaylandClient_VERSION VERSION_GREATER_EQUAL "6.8.0")
+    qt6_generate_wayland_protocol_client_sources(ntchffs-overlay
+        PRIVATE_CODE
+        FILES
+            ${CMAKE_CURRENT_SOURCE_DIR}/protocols/wlr-layer-shell-unstable-v1.xml
+            ${XDG_SHELL_XML_PATH}
+    )
+else()
+    qt6_generate_wayland_protocol_client_sources(ntchffs-overlay
+        FILES
+            ${CMAKE_CURRENT_SOURCE_DIR}/protocols/wlr-layer-shell-unstable-v1.xml
+            ${XDG_SHELL_XML_PATH}
+    )
+endif()
 
 target_include_directories(ntchffs-overlay PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
