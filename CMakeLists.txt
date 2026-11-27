@@ -34,7 +34,7 @@ find_library(OBS_LIBRARY NAMES obs HINTS ${LIBOBS_LIBRARY_DIRS} /usr/lib /usr/li
 find_library(OBS_FRONTEND_LIBRARY NAMES obs-frontend-api HINTS ${LIBOBS_LIBRARY_DIRS} /usr/lib /usr/lib64 /usr/local/lib /usr/local/lib64 REQUIRED)
 
 include(CheckCXXSourceCompiles)
-set(CMAKE_REQUIRED_INCLUDES ${LIBOBS_INCLUDE_DIRS} /usr/include/obs)
+set(CMAKE_REQUIRED_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/src/common ${LIBOBS_INCLUDE_DIRS} /usr/include/obs)
 check_cxx_source_compiles("
 #include <obs-frontend-api.h>
 int main() { return static_cast<int>(OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVING); }

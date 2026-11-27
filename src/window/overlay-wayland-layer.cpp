@@ -22,7 +22,9 @@
 #include <QtWaylandClient/private/qwaylandshellsurface_p.h>
 #include <QtWaylandClient/private/qwaylandwindow_p.h>
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 #include "qwayland-wlr-layer-shell-unstable-v1.h"
+#endif
 
 // Include X11 headers after Qt headers to avoid macro collisions
 #include <X11/Xatom.h>
@@ -42,12 +44,16 @@ namespace overlay_win {
 
 namespace {
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 class WlrLayerShellIntegration;
 class WlrLayerSurface;
+#endif
 
 struct WindowEntry {
 	LayerSurfaceSpec spec;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 	WlrLayerSurface *surface = nullptr;
+#endif
 };
 
 static QHash<QWindow *, WindowEntry> &WindowRegistry()
@@ -56,6 +62,7 @@ static QHash<QWindow *, WindowEntry> &WindowRegistry()
 	return reg;
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 static std::mutex g_surfaceMutex;
 static std::unordered_map<QWindow *, WlrLayerSurface *> g_activeSurfaces;
 
@@ -378,6 +385,7 @@ static LayerSurfaceEventFilter *GetGlobalEventFilter()
 	static LayerSurfaceEventFilter filter;
 	return &filter;
 }
+#endif
 
 void ApplyWaylandToplevelInputRegion(QWidget *widget, const QRegion &region, bool clickThrough)
 {
@@ -521,6 +529,7 @@ void WaylandLayerHelper::ConfigureWidget(QWidget *widget, const LayerSurfaceSpec
 		WindowEntry &entry = WindowRegistry()[qwin];
 		entry.spec = spec;
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 		qwin->removeEventFilter(GetGlobalEventFilter());
 		qwin->installEventFilter(GetGlobalEventFilter());
 		LayerSurfaceEventFilter::AttachShellIntegration(qwin);
@@ -529,6 +538,10 @@ void WaylandLayerHelper::ConfigureWidget(QWidget *widget, const LayerSurfaceSpec
 			entry.surface->UpdateSpec(spec);
 		else if (IsWaylandPlatform())
 			ApplyWaylandToplevelInputRegion(widget, spec.inputRegion, spec.clickThrough);
+#else
+		if (IsWaylandPlatform())
+			ApplyWaylandToplevelInputRegion(widget, spec.inputRegion, spec.clickThrough);
+#endif
 	}
 
 	if (IsX11Platform()) {
@@ -551,10 +564,15 @@ void WaylandLayerHelper::UpdateWidgetSpec(QWidget *widget, const LayerSurfaceSpe
 	entry.spec = spec;
 	if (spec.targetScreen)
 		qwin->setScreen(spec.targetScreen);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 	if (entry.surface)
 		entry.surface->UpdateSpec(spec);
 	else if (IsWaylandPlatform())
 		ApplyWaylandToplevelInputRegion(widget, spec.inputRegion, spec.clickThrough);
+#else
+	if (IsWaylandPlatform())
+		ApplyWaylandToplevelInputRegion(widget, spec.inputRegion, spec.clickThrough);
+#endif
 
 	if (IsX11Platform()) {
 		ApplyX11TopmostHints(widget, spec.clickThrough);
@@ -571,10 +589,15 @@ void WaylandLayerHelper::SetInputRegion(QWidget *widget, const QRegion &region, 
 			WindowEntry &entry = WindowRegistry()[qwin];
 			entry.spec.clickThrough = clickThrough;
 			entry.spec.inputRegion = region;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 			if (entry.surface)
 				entry.surface->UpdateSpec(entry.spec);
 			else if (IsWaylandPlatform())
 				ApplyWaylandToplevelInputRegion(widget, region, clickThrough);
+#else
+			if (IsWaylandPlatform())
+				ApplyWaylandToplevelInputRegion(widget, region, clickThrough);
+#endif
 		}
 	}
 	if (IsX11Platform())
@@ -593,21 +616,27 @@ void WaylandLayerHelper::SetKeyboardMode(QWidget *widget, KeyboardMode mode)
 				entry.spec.keyboardMode = mode;
 			}
 		}
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 		std::lock_guard<std::mutex> lock(g_surfaceMutex);
 		auto itSurf = g_activeSurfaces.find(qwin);
 		if (itSurf != g_activeSurfaces.end() && itSurf->second)
 			itSurf->second->updateKeyboardMode(mode);
+#endif
 	}
 }
 
 void WaylandLayerHelper::ShutdownGlobal()
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
 	{
 		std::lock_guard<std::mutex> lock(g_surfaceMutex);
 		g_activeSurfaces.clear();
 	}
 	WindowRegistry().clear();
 	GetGlobalShellIntegration()->Reset();
+#else
+	WindowRegistry().clear();
+#endif
 }
 
 } // namespace overlay_win

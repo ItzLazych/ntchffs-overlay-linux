@@ -148,9 +148,9 @@ cp -rf data/obs-plugins/ntchffs-overlay/. ~/.config/obs-studio/plugins/ntchffs-o
      ```
 
 4. **Поддержка слоёв оверлея по композиторам**
-   - Композиторы с `wlr-layer-shell` (`niri`, `Hyprland`, `Sway`, `River`, `Wayfire`, `Labwc`) отображают оверлей в нативном верхнем overlay-слое с прозрачным кликом сквозь пустые области.
-   - На **X11** используется `XShape` click-through и `_NET_WM_STATE_ABOVE`.
-   - На **GNOME Wayland** (`Mutter`, без `wlr-layer-shell`) используется fallback на окно Qt с `wl_surface_set_input_region` click-through.
+   - Композиторы с `wlr-layer-shell` (`niri`, `Hyprland`, `Sway`, `River`, `Wayfire`, `Labwc`) отображают оверлей в нативном верхнем overlay-слое с прозрачным кликом сквозь пустые области (для нативной интеграции `wlr-layer-shell` требуется Qt ≥ 6.5 — Arch, Fedora, Debian 13, Ubuntu 24.10+).
+   - На **X11** используется `XShape` click-through и `_NET_WM_STATE_ABOVE` (в том числе на Qt 6.4 / Ubuntu 24.04 LTS).
+   - На **GNOME Wayland** (`Mutter`, без `wlr-layer-shell`) и на системах Wayland с Qt 6.4 (Ubuntu 24.04 LTS) используется fallback на окно Qt с `wl_surface_set_input_region` click-through.
 
 ---
 
